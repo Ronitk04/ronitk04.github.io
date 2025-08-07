@@ -1,5 +1,5 @@
 import { state } from './state.js';
-import { homePageTemplate, profilePageTemplate, addProductPageTemplate } from './templates.js';
+import { homePageTemplate, profilePageTemplate, addProductPageTemplate, dashboardPageTemplate } from './templates.js';
 
 const mainContent = document.getElementById('main-content');
 const userActionsContainer = document.getElementById('user-actions');
@@ -22,9 +22,44 @@ export function renderPage(page) {
         case 'addProduct':
             mainContent.innerHTML = addProductPageTemplate(state);
             break;
+        case 'dashboard':
+            mainContent.innerHTML = dashboardPageTemplate;
+            renderDashboardProducts();
+            break;
     }
     window.scrollTo(0, 0);
 };
+
+function renderDashboardProducts() {
+    const productListContainer = document.getElementById('dashboard-product-list');
+    if (!productListContainer) return;
+
+    productListContainer.innerHTML = ''; // Clear existing list
+
+    if (state.products.length === 0) {
+        productListContainer.innerHTML = '<p class="text-center text-gray-500 py-8">You have not added any products yet.</p>';
+        return;
+    }
+
+    state.products.forEach(product => {
+        const productEl = document.createElement('div');
+        productEl.className = 'flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50 transition-colors';
+        productEl.innerHTML = `
+            <div class="flex items-center gap-4">
+                <img src="${product.image}" alt="${product.name}" class="w-16 h-16 rounded-md object-cover" onerror="this.onerror=null;this.src='https://placehold.co/100x100/cccccc/ffffff?text=No+Img';">
+                <div>
+                    <p class="font-semibold">${product.name}</p>
+                    <p class="text-sm text-gray-600">₹${product.price.toLocaleString('en-IN')}</p>
+                </div>
+            </div>
+            <div class="flex gap-2">
+                <button data-action="edit-product" data-id="${product.id}" class="bg-blue-100 text-blue-700 font-semibold py-2 px-4 rounded-full hover:bg-blue-200 transition">Edit</button>
+                <button data-action="delete-product" data-id="${product.id}" class="bg-red-100 text-red-700 font-semibold py-2 px-4 rounded-full hover:bg-red-200 transition">Delete</button>
+            </div>
+        `;
+        productListContainer.appendChild(productEl);
+    });
+}
 
 export function renderProductSections() {
     const sectionsContainer = document.getElementById('product-sections');
@@ -101,7 +136,10 @@ export function renderUserActions() {
     userActionsContainer.innerHTML = '';
     if (state.isLoggedIn) {
         userActionsContainer.innerHTML = `
-            ${state.isSeller ? `<button id="add-product-btn" class="hidden sm:block bg-green-100 text-green-700 font-semibold py-2 px-4 rounded-full hover:bg-green-200 transition">Add Product</button>` : ''}
+            ${state.isSeller ? `
+            <button id="dashboard-btn" class="hidden sm:block bg-purple-100 text-purple-700 font-semibold py-2 px-4 rounded-full hover:bg-purple-200 transition">Dashboard</button>
+            <button id="add-product-btn" class="hidden sm:block bg-green-100 text-green-700 font-semibold py-2 px-4 rounded-full hover:bg-green-200 transition">Add Product</button>
+            ` : ''}
             <button id="profile-btn" class="relative text-gray-600 hover:text-indigo-600 transition"><i class="fas fa-user fa-lg"></i></button>
             <button id="wishlist-btn" class="relative text-gray-600 hover:text-indigo-600 transition">
                 <i class="fas fa-heart fa-lg"></i>

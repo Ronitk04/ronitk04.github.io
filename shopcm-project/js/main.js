@@ -1,5 +1,6 @@
 import { state, saveState } from './state.js';
-import { callGemini } from './api.js';
+import { callGemini, searchUnsplashImages } from './api.js';
+import * as templates from './templates.js';
 import {
     renderPage,
     renderUserActions,
@@ -48,6 +49,36 @@ document.body.addEventListener('click', async e => {
         summaryContainer.innerHTML = `<div class="bg-indigo-50 p-4 rounded-lg border-l-4 border-indigo-400"><h4 class="font-bold mb-2">AI Review Summary</h4><p class="text-sm whitespace-pre-wrap">${summary}</p></div>`;
         summaryContainer.classList.remove('hidden');
     }
+    if (action === 'search-images') {
+        const form = target.closest('form');
+        const query = form.querySelector('input[name="image-search"]').value;
+        if (!query) {
+            showToast("Please enter a search term for images.");
+            return;
+        }
+        const resultsContainer = form.querySelector('[id^="image-search-results-"]');
+        resultsContainer.innerHTML = '<div class="col-span-full text-center p-4">Searching...</div>';
+
+        const images = await searchUnsplashImages(query);
+
+        resultsContainer.innerHTML = '';
+        if (images.length === 0) {
+            resultsContainer.innerHTML = '<div class="col-span-full text-center p-4">No images found.</div>';
+            return;
+        }
+        images.forEach(img => {
+            const imgEl = document.createElement('img');
+            imgEl.src = img.urls.small;
+            imgEl.className = 'w-full h-24 object-cover rounded-lg cursor-pointer hover:ring-2 hover:ring-indigo-500';
+            imgEl.dataset.action = 'select-image';
+            imgEl.dataset.imageUrl = img.urls.small; // Or a larger version like img.urls.regular
+            resultsContainer.appendChild(imgEl);
+        });
+    }
+    if (action === 'select-image') {
+        const form = target.closest('form');
+        form.querySelector('input[name="image"]').value = target.dataset.imageUrl;
+    }
 
     // User Actions
     if (action === 'login-btn') {
@@ -62,7 +93,8 @@ document.body.addEventListener('click', async e => {
         renderPage('home');
     }
     if (action === 'profile-btn') renderPage('profile');
-    if (action === 'add-product-btn') renderPage('addProduct');
+    if (action === 'add-product-btn' || action === 'add-new-product-from-dashboard-btn') renderPage('addProduct');
+    if (action === 'dashboard-btn') renderPage('dashboard');
     if (action === 'home-logo') {
         state.activeFilters.category = 'All';
         renderPage('home');
@@ -143,14 +175,29 @@ document.body.addEventListener('click', async e => {
             state.cart = state.cart.filter(i => i.id !== id);
             renderCart();
         }
+        if (action === 'delete-product') {
+            if (confirm(`Are you sure you want to delete "${product.name}"?`)) {
+                state.products = state.products.filter(p => p.id !== id);
+                renderPage('dashboard');
+                showToast('Product deleted successfully');
+            }
+        }
+        if (action === 'edit-product') {
+            const editModalContent = document.getElementById('edit-product-modal-content');
+            const editModal = document.getElementById('edit-product-modal');
+            editModalContent.innerHTML = templates.editProductFormTemplate(product, state);
+            editModal.classList.remove('hidden');
+            editModal.classList.add('flex');
+        }
     }
 
     // Modal Actions
-    if (action === 'close-modal') {
-        productModal.classList.add('fade-out');
-        productModal.addEventListener('animationend', () => {
-            productModal.classList.add('hidden');
-            productModal.classList.remove('fade-out');
+    if (action === 'close-modal' || action === 'close-edit-modal') {
+        const modalToClose = action === 'close-modal' ? productModal : document.getElementById('edit-product-modal');
+        modalToClose.classList.add('fade-out');
+        modalToClose.addEventListener('animationend', () => {
+            modalToClose.classList.add('hidden');
+            modalToClose.classList.remove('fade-out');
         }, { once: true });
     }
     const tabTarget = e.target.closest('[data-tab]');
@@ -185,6 +232,24 @@ document.body.addEventListener('submit', e => {
         state.addresses.push(newAddress);
         renderAddresses();
         e.target.reset();
+    }
+    if (e.target.id === 'edit-product-form') {
+        const formData = new FormData(e.target);
+        const editingId = parseInt(e.target.dataset.editingId);
+        const product = state.products.find(p => p.id === editingId);
+
+        if (product) {
+            product.name = formData.get('name');
+            product.price = parseFloat(formData.get('price'));
+            product.image = formData.get('image');
+            product.category = formData.get('category') === 'Other' ? formData.get('newCategory') : formData.get('category');
+            product.description = formData.get('description');
+            product.specs = JSON.parse(formData.get('specs') || '{}');
+        }
+
+        document.getElementById('edit-product-modal').classList.add('hidden');
+        renderPage('dashboard');
+        showToast('Product updated successfully!');
     }
     if (e.target.id === 'add-product-form') {
         const formData = new FormData(e.target);

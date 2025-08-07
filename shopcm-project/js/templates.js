@@ -42,6 +42,39 @@ export const profilePageTemplate = (state) => `
     </div>
 `;
 
+export const editProductFormTemplate = (product, state) => `
+    <div class="bg-white p-8 rounded-2xl shadow-lg w-full">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Edit Product</h1>
+            <button data-action="close-edit-modal" class="text-gray-500 hover:text-gray-800"><i class="fas fa-times fa-lg"></i></button>
+        </div>
+        <form id="edit-product-form" data-editing-id="${product.id}" class="space-y-4">
+            <input name="name" required placeholder="Product Name" class="w-full p-3 border rounded-lg" value="${product.name}"/>
+            <input name="price" required type="number" placeholder="Price (INR)" class="w-full p-3 border rounded-lg" value="${product.price}"/>
+            <input name="image" required placeholder="Image URL" class="w-full p-3 border rounded-lg" value="${product.image}"/>
+            <div class="p-2 bg-gray-50 rounded-lg">
+                <div class="flex gap-2">
+                    <input type="text" name="image-search" placeholder="Search for an image..." class="w-full p-2 border rounded-lg">
+                    <button type="button" data-action="search-images" class="bg-indigo-500 text-white font-semibold px-4 rounded-lg hover:bg-indigo-600">Search</button>
+                </div>
+                <div class="grid grid-cols-4 gap-2 mt-2" id="image-search-results-edit"></div>
+            </div>
+            <select name="category" required class="w-full p-3 border rounded-lg bg-white">
+                <option value="">Select Category</option>
+                ${[...new Set(state.products.map(p => p.category))].map(c => `<option value="${c}" ${product.category === c ? 'selected' : ''}>${c}</option>`).join('')}
+                <option value="Other">Other (New Category)</option>
+            </select>
+            <input name="newCategory" placeholder="New Category Name (if 'Other' selected)" class="w-full p-3 border rounded-lg hidden"/>
+            <div class="relative">
+                <textarea name="description" required placeholder="Product Description or Keywords" class="w-full p-3 border rounded-lg h-28">${product.description}</textarea>
+                <button type="button" id="generate-description-btn-edit" class="absolute bottom-3 right-3 bg-indigo-100 text-indigo-600 text-xs font-bold py-1 px-2 rounded-full hover:bg-indigo-200">✨ Generate with AI</button>
+            </div>
+            <textarea name="specs" placeholder="Specifications (JSON format)" class="w-full p-3 border rounded-lg h-28 font-mono text-sm">${JSON.stringify(product.specs, null, 2)}</textarea>
+            <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700">Save Changes</button>
+        </form>
+    </div>
+`;
+
 export const addProductPageTemplate = (state) => `
     <div class="bg-white p-8 rounded-2xl shadow-lg max-w-2xl mx-auto">
         <h1 class="text-3xl font-bold mb-6">Add a New Product</h1>
@@ -49,6 +82,13 @@ export const addProductPageTemplate = (state) => `
             <input name="name" required placeholder="Product Name" class="w-full p-3 border rounded-lg"/>
             <input name="price" required type="number" placeholder="Price (INR)" class="w-full p-3 border rounded-lg"/>
             <input name="image" required placeholder="Image URL" class="w-full p-3 border rounded-lg"/>
+            <div class="p-2 bg-gray-50 rounded-lg">
+                <div class="flex gap-2">
+                    <input type="text" name="image-search" placeholder="Search for an image..." class="w-full p-2 border rounded-lg">
+                    <button type="button" data-action="search-images" class="bg-indigo-500 text-white font-semibold px-4 rounded-lg hover:bg-indigo-600">Search</button>
+                </div>
+                <div class="grid grid-cols-4 gap-2 mt-2" id="image-search-results-add"></div>
+            </div>
             <select name="category" required class="w-full p-3 border rounded-lg bg-white">
                 <option value="">Select Category</option>
                 ${[...new Set(state.products.map(p => p.category))].map(c => `<option value="${c}">${c}</option>`).join('')}
@@ -62,5 +102,19 @@ export const addProductPageTemplate = (state) => `
             <textarea name="specs" placeholder="Specifications (JSON format, e.g., {&quot;Key&quot;: &quot;Value&quot;})" class="w-full p-3 border rounded-lg h-28 font-mono text-sm"></textarea>
             <button type="submit" class="w-full bg-indigo-600 text-white font-bold py-3 px-6 rounded-lg hover:bg-indigo-700">Add Product</button>
         </form>
+    </div>
+`;
+
+export const dashboardPageTemplate = `
+    <div class="bg-white p-8 rounded-2xl shadow-lg">
+        <div class="flex justify-between items-center mb-6">
+            <h1 class="text-3xl font-bold">Seller Dashboard</h1>
+            <button id="add-new-product-from-dashboard-btn" class="bg-green-600 text-white font-semibold py-2 px-6 rounded-full hover:bg-green-700 transition">
+                <i class="fas fa-plus mr-2"></i>Add New Product
+            </button>
+        </div>
+        <div id="dashboard-product-list" class="space-y-4">
+            <!-- Product list will be rendered here by ui.js -->
+        </div>
     </div>
 `;
